@@ -1,3 +1,12 @@
+drop table Aplicacao_vacina cascade constraints;
+drop table Clinica cascade constraints;
+drop table Consulta cascade constraints;
+drop table Historico_saude cascade constraints;
+drop table Log_erro cascade constraints;
+drop table Pet cascade constraints;
+drop table Tutor cascade constraints;
+drop table Vacina cascade constraints;
+
 --Tabelas SQL criadas pelo MER
 CREATE TABLE Aplicacao_vacina 
     ( 
