@@ -1,650 +1,841 @@
-drop table Aplicacao_vacina cascade constraints;
-drop table Clinica cascade constraints;
-drop table Consulta cascade constraints;
-drop table Historico_saude cascade constraints;
-drop table Log_erro cascade constraints;
-drop table Pet cascade constraints;
-drop table Tutor cascade constraints;
-drop table Vacina cascade constraints;
+SET SERVEROUTPUT ON
+SET VERIFY OFF
 
---Tabelas SQL criadas pelo MER
-CREATE TABLE Aplicacao_vacina 
-    ( 
-     id_aplicacao   INTEGER  NOT NULL , 
-     data_aplicacao DATE  NOT NULL , 
-     id_vacina      INTEGER  NOT NULL , 
-     id_pet         INTEGER  NOT NULL 
-    ) 
-;
- 
-ALTER TABLE Aplicacao_vacina 
-    ADD CONSTRAINT Aplicacao_vacina_PK PRIMARY KEY ( id_aplicacao ) ;
- 
-CREATE TABLE Clinica 
-    ( 
-     id_clinica INTEGER  NOT NULL , 
-     nome       VARCHAR2 (100)  NOT NULL , 
-     endereco   VARCHAR2 (200)  NOT NULL , 
-     telefone   VARCHAR2 (20) 
-    ) 
-;
- 
-ALTER TABLE Clinica 
-    ADD CONSTRAINT id_clinica_PK PRIMARY KEY ( id_clinica ) ;
- 
-CREATE TABLE Consulta 
-    ( 
-     id_consulta   INTEGER  NOT NULL , 
-     data_consulta DATE  NOT NULL , 
-     descricao     VARCHAR2 (200) , 
-     id_pet        INTEGER  NOT NULL , 
-     id_clinica    INTEGER  NOT NULL 
-    ) 
-;
- 
-ALTER TABLE Consulta 
-    ADD CONSTRAINT Consulta_PK PRIMARY KEY ( id_consulta ) ;
- 
-CREATE TABLE Historico_saude 
-    ( 
-     id_historico  INTEGER  NOT NULL , 
-     descricao     VARCHAR2 (255)  NOT NULL , 
-     data_registro DATE  NOT NULL , 
-     id_pet        INTEGER  NOT NULL 
-    ) 
-;
- 
-ALTER TABLE Historico_saude 
-    ADD CONSTRAINT Historico_saude_PK PRIMARY KEY ( id_historico ) ;
- 
-CREATE TABLE Log_erro 
-    ( 
-     id_log         INTEGER GENERATED ALWAYS AS IDENTITY, 
-     nome_procedure VARCHAR2 (100)  NOT NULL , 
-     usuario        VARCHAR2 (100)  NOT NULL , 
-     data_erro      DATE  NOT NULL , 
-     codigo_erro    INTEGER , 
-     mensagem_erro  VARCHAR2 (4000)  NOT NULL 
-    ) 
-;
- 
-ALTER TABLE Log_erro 
-    ADD CONSTRAINT Log_erro_PK PRIMARY KEY ( id_log ) ;
- 
-CREATE TABLE Pet 
-    ( 
-     id_pet   INTEGER  NOT NULL , 
-     nome     VARCHAR2 (100)  NOT NULL , 
-     idade    INTEGER , 
-     especie  VARCHAR2 (50)  NOT NULL , 
-     raca     VARCHAR2 (50) , 
-     id_tutor INTEGER  NOT NULL 
-    ) 
-;
- 
-ALTER TABLE Pet 
-    ADD CONSTRAINT Pet_PK PRIMARY KEY ( id_pet ) ;
- 
-CREATE TABLE Tutor 
-    ( 
-     id_tutor INTEGER  NOT NULL , 
-     nome     VARCHAR2 (100)  NOT NULL , 
-     telefone VARCHAR2 (20) , 
-     email    VARCHAR2 (100) 
-    ) 
-;
- 
-ALTER TABLE Tutor 
-    ADD CONSTRAINT Tutor_PK PRIMARY KEY ( id_tutor ) ;
- 
-CREATE TABLE Vacina 
-    ( 
-     id_vacina INTEGER  NOT NULL , 
-     nome      VARCHAR2 (100)  NOT NULL , 
-     descricao VARCHAR2 (200) 
-    ) 
-;
- 
-ALTER TABLE Vacina 
-    ADD CONSTRAINT Vacina_PK PRIMARY KEY ( id_vacina ) ;
- 
-ALTER TABLE Aplicacao_vacina 
-    ADD CONSTRAINT Aplicacao_vacina_Pet_FK FOREIGN KEY 
-    ( 
-     id_pet
-    ) 
-    REFERENCES Pet 
-    ( 
-     id_pet
-    ) 
-;
- 
-ALTER TABLE Aplicacao_vacina 
-    ADD CONSTRAINT Aplicacao_vacina_Vacina_FK FOREIGN KEY 
-    ( 
-     id_vacina
-    ) 
-    REFERENCES Vacina 
-    ( 
-     id_vacina
-    ) 
-;
- 
-ALTER TABLE Consulta 
-    ADD CONSTRAINT Consulta_id_clinica_FK FOREIGN KEY 
-    ( 
-     id_clinica
-    ) 
-    REFERENCES Clinica 
-    ( 
-     id_clinica
-    ) 
-;
- 
-ALTER TABLE Consulta 
-    ADD CONSTRAINT Consulta_Pet_FK FOREIGN KEY 
-    ( 
-     id_pet
-    ) 
-    REFERENCES Pet 
-    ( 
-     id_pet
-    ) 
-;
- 
-ALTER TABLE Historico_saude 
-    ADD CONSTRAINT Historico_saude_Pet_FK FOREIGN KEY 
-    ( 
-     id_pet
-    ) 
-    REFERENCES Pet 
-    ( 
-     id_pet
-    ) 
-;
- 
-ALTER TABLE Pet 
-    ADD CONSTRAINT Pet_Tutor_FK FOREIGN KEY 
-    ( 
-     id_tutor
-    ) 
-    REFERENCES Tutor 
-    ( 
-     id_tutor
-    ) 
-;
- 
- 
- 
---PRECEDURE DAS TABELAS
- 
-set serveroutput on
-set verify off
- 
- 
--- 1. TUTOR
-CREATE OR REPLACE PROCEDURE inserir_tutor (
-    v_id_tutor   INTEGER,
-    v_nome       VARCHAR2,
-    v_telefone   VARCHAR2,
-    v_email      VARCHAR2
+DROP TABLE Usuario CASCADE CONSTRAINTS;
+DROP TABLE Clinica CASCADE CONSTRAINTS;
+DROP TABLE Responsavel CASCADE CONSTRAINTS;
+DROP TABLE Veterinario CASCADE CONSTRAINTS;
+DROP TABLE Pet CASCADE CONSTRAINTS;
+DROP TABLE Vacina CASCADE CONSTRAINTS;
+DROP TABLE Consulta CASCADE CONSTRAINTS;
+DROP TABLE Aplicacao_vacina CASCADE CONSTRAINTS;
+DROP TABLE Lembrete CASCADE CONSTRAINTS;
+DROP TABLE Sensor CASCADE CONSTRAINTS;
+DROP TABLE Leitura CASCADE CONSTRAINTS;
+DROP TABLE Log_erro CASCADE CONSTRAINTS;
+DROP TABLE Auditoria CASCADE CONSTRAINTS;
+
+
+
+--tabela usuario 
+CREATE TABLE  Usuario(
+    id_usuario NUMBER,
+    nome VARCHAR2(100) NOT NULL,
+    email VARCHAR2(255)NOT NULL,
+    senha VARCHAR2(255)NOT NULL,
+    telefone VARCHAR2(11) NOT NULL,
+    data_cadastro DATE DEFAULT SYSDATE NOT NULL,
+    status VARCHAR2(20)DEFAULT 'ATIVO'NOT NULL,
+    tipo_usuario VARCHAR2(20)NOT NULL,
+    CONSTRAINT pk_usuario PRIMARY KEY (id_usuario),
+    CONSTRAINT uk_usuario_email UNIQUE(email),
+    CONSTRAINT ck_usuario_status CHECK (status IN('ATIVO','INATIVO')),
+    CONSTRAINT ck_usuario_tipo CHECK(tipo_usuario IN('RESPONSAVEL','VETERINARIO'))
+);
+--tabela clinica
+CREATE TABLE Clinica(
+    id_clinica NUMBER,
+    nome VARCHAR2(100) NOT NULL,
+    cnpj VARCHAR2(14) NOT NULL,
+    telefone VARCHAR2(11) NOT NULL,
+    email VARCHAR2(255),
+    endereco VARCHAR2(255)NOT NULL,
+    CONSTRAINT pk_clinica PRIMARY KEY (id_clinica),
+    CONSTRAINT uk_clinica_cnpj UNIQUE (cnpj)
+);
+
+--table responsavel
+CREATE TABLE Responsavel(
+    id_responsavel NUMBER,
+    cpf VARCHAR2(11) NOT NULL,
+    data_nascimento DATE NOT NULL,
+    id_usuario NUMBER NOT NULL,
+    CONSTRAINT pk_responsavel PRIMARY KEY(id_responsavel),
+    CONSTRAINT uk_responsavel UNIQUE (cpf),
+    CONSTRAINT uk_responsavel_usuario UNIQUE(id_usuario),
+    CONSTRAINT fk_responsavel_usuario FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)   
+);
+
+--tabela Veterinario
+CREATE TABLE Veterinario(
+    id_veterinario NUMBER,
+    crv VARCHAR2(20) NOT NULL,
+    especialidade VARCHAR2(100) NOT NULL,
+    id_usuario NUMBER NOT NULL,
+    id_clinica NUMBER NOT NULL,
+    CONSTRAINT pk_veterinario PRIMARY KEY (id_veterinario),
+    CONSTRAINT uk_veterinario_crv UNIQUE (crv),
+    CONSTRAINT uk_veterinario_usuario UNIQUE (id_usuario),
+    CONSTRAINT fk_veterinario_usuario FOREIGN KEY(id_usuario) REFERENCES Usuario(id_usuario),
+    CONSTRAINT fk_veterinario_clinica FOREIGN KEY(id_clinica) REFERENCES CLinica(id_clinica)  
+);
+
+--tabela pet
+CREATE TABLE Pet(
+    id_pet NUMBER,
+    nome VARCHAR2(100) NOT NULL,
+    sexo VARCHAR2(20) NOT NULL,
+    raca VARCHAR2(50)NOT NULL,
+    especie VARCHAR2(50)NOT NULL,
+    data_nascimento DATE NOT NULL,
+    id_responsavel NUMBER NOT NULL,
+    CONSTRAINT pk_pet PRIMARY KEY(id_pet),
+    CONSTRAINT ck_pet_sexo CHECK(sexo IN('MACHO','FEMEA','NAO_INFORMADO')),
+    CONSTRAINT fk_pet_responsavel FOREIGN KEY (id_responsavel) REFERENCES responsavel(id_responsavel)
+);
+
+--tabela vacina
+CREATE TABLE Vacina(
+    id_vacina NUMBER,
+    nome VARCHAR2(100)NOT NULL,
+    descricao VARCHAR2(255),
+    CONSTRAINT pk_vacina PRIMARY KEY(id_vacina)
+);
+
+--tabela consulta
+CREATE TABLE Consulta(
+    id_consulta NUMBER,
+    data_hora DATE NOT NULL,
+    motivo VARCHAR2(100)NOT NULL,
+    observacao VARCHAR2(255),
+    status VARCHAR2(20)NOT NULL,
+    id_pet NUMBER NOT NULL,
+    id_veterinario NUMBER NOT NULL,
+    id_clinica NUMBER NOT NULL,
+    CONSTRAINT pk_consulta PRIMARY KEY(id_consulta),
+    CONSTRAINT ck_consulta_status CHECK (status IN('AGENDADA', 'REALIZADA', 'CANCELADA')),
+    CONSTRAINT fk_consulta_pet FOREIGN KEY (id_pet)REFERENCES Pet(id_pet),
+    CONSTRAINT fk_consulta_veterinario FOREIGN KEY(id_veterinario) REFERENCES Veterinario(id_veterinario),
+    CONSTRAINT fk_consulta_clinica FOREIGN KEY (id_clinica) REFERENCES Clinica(id_clinica)
+);
+
+--tabela aplicacao_vacina
+CREATE TABLE Aplicacao_vacina(
+    id_aplicacao_vacina NUMBER,
+    data_aplicacao DATE NOT NULL,
+    dose VARCHAR(20)NOT NULL,
+    observacao VARCHAR2(255),
+    id_pet NUMBER NOT NULL,
+    id_vacina NUMBER NOT NULL,
+    id_veterinario NUMBER,
+    CONSTRAINT pk_aplicacao_vacina PRIMARY KEY (id_aplicacao_vacina),
+    CONSTRAINT fk_aplicacao_pet FOREIGN KEY(id_pet) REFERENCES Pet(id_pet),
+    CONSTRAINT fk_aplicacao_vacina FOREIGN KEY (id_vacina) REFERENCES Vacina(id_vacina),
+    CONSTRAINT fk_aplicacao_veterinario FOREIGN KEY (id_veterinario) REFERENCES Veterinario(id_veterinario) 
+);
+
+--tabela lembrete
+CREATE TABLE Lembrete(
+    id_lembrete NUMBER,
+    titulo VARCHAR2(100) NOT NULL,
+    descricao VARCHAR2(255),
+    data_hora DATE NOT NULL,
+    status VARCHAR2(20) NOT NULL,
+    id_pet NUMBER NOT NULL,
+    CONSTRAINT pk_lembrete PRIMARY KEY (id_lembrete),
+    CONSTRAINT ck_lembrete_status CHECK(status IN('PENDENTE', 'CONCLUIDO','CANCELADO')),
+    CONSTRAINT fk_lembrete_pet FOREIGN KEY(id_pet) REFERENCES Pet(id_pet)
+);
+
+--tabela sensor
+CREATE TABLE Sensor(
+    id_sensor NUMBER,
+    tipo VARCHAR2(50) NOT NULL,
+    unidade VARCHAR2(20) NOT NULL,
+    status VARCHAR2(20) NOT NULL,
+    id_pet NUMBER NOT NULL,
+    CONSTRAINT pk_sensor PRIMARY KEY (id_sensor),
+    CONSTRAINT ck_sensor_status CHECK(status in ('ATIVO', 'INATIVO')),
+    CONSTRAINT fk_sensor_pet FOREIGN KEY (id_pet) REFERENCES Pet(id_pet)
+);
+
+--tabela leitura
+CREATE TABLE Leitura(
+    id_leitura NUMBER,
+    data_registro DATE DEFAULT SYSDATE NOT NULL,
+    valor NUMBER (10,2) NOT NULL,
+    id_sensor NUMBER NOT NULL,
+    CONSTRAINT pk_leitura PRIMARY KEY (id_leitura),
+    CONSTRAINT fk_leitura_sensor FOREIGN KEY (id_sensor) REFERENCES Sensor(id_sensor)
+);
+
+--table Log_erro
+CREATE TABLE Log_erro(
+    id_log_erro NUMBER,
+    nome_procedure VARCHAR2(100),
+    usuario VARCHAR2(100),
+    data_erro DATE DEFAULT SYSDATE NOT NULL,
+    codigo_erro NUMBER,
+    mensagem_erro VARCHAR2(500) NOT NULL,
+    CONSTRAINT pk_log_erro PRIMARY KEY (id_log_erro)
+);
+
+--tabela de auditoria
+CREATE TABLE Auditoria(
+    id_auditoria NUMBER GENERATED BY DEFAULT AS IDENTITY,
+    usuario VARCHAR2(100) NOT NULL,
+    operacao VARCHAR2(10) NOT NULL,
+    data_operacao DATE DEFAULT SYSDATE NOT NULL,
+    valor_antigo VARCHAR2(4000),
+    valor_novo VARCHAR2(4000),
+    tabela_afetada VARCHAR2(50) NOT NULL,
+    CONSTRAINT pk_auditoria PRIMARY KEY(id_auditoria),
+    CONSTRAINT ck_auditoria_operacao CHECK (operacao IN ('INSERT', 'UPDATE', 'DELETE'))
+);
+--insert usuario
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (1, 'Ana Souza', 'ana@email.com', 'senha1', '11999990001', 'RESPONSAVEL');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (2, 'Carlos Lima', 'carlos@email.com', 'senha2', '11999990002', 'RESPONSAVEL');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (3, 'Marina Alves', 'marina@email.com', 'senha3', '11999990003', 'RESPONSAVEL');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (4, 'Dr. Paulo Mendes', 'paulo@vet.com', 'senha4', '11999990004', 'VETERINARIO');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (5, 'Dra. Juliana Rocha', 'juliana@vet.com', 'senha5', '11999990005', 'VETERINARIO');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (6, 'Fernanda Costa', 'fernanda@email.com', 'senha6','11999990006', 'RESPONSAVEL');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (7, 'Ricardo Santos', 'ricardo@email.com', 'senha7','11999990007', 'RESPONSAVEL');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (8, 'Dr. Marcelo Nunes', 'marcelo@vet.com', 'senha8','11999990008', 'VETERINARIO');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (9, 'Dra. Beatriz Lopes', 'beatriz@vet.com', 'senha9','11999990009', 'VETERINARIO');
+INSERT INTO Usuario (id_usuario, nome, email, senha, telefone, tipo_usuario) VALUES (10, 'Dr. Rafael Martins', 'rafael@vet.com', 'senha10','11999990010', 'VETERINARIO');
+
+--insert clinica
+INSERT INTO Clinica (id_clinica, nome, cnpj, telefone, email, endereco) VALUES  (1, 'Clinica Pet Vida', '11111111000111', '1133330001','contato@petvida.com', 'Rua A, 100');
+INSERT INTO Clinica (id_clinica, nome, cnpj, telefone, email, endereco) VALUES  (2, 'Vet Center', '22222222000122', '1133330002','contato@vetcenter.com', 'Rua B, 200');
+INSERT INTO Clinica (id_clinica, nome, cnpj, telefone, email, endereco) VALUES  (3, 'Animal Care', '33333333000133', '1133330003', 'contato@animalcare.com', 'Rua C, 300');
+INSERT INTO Clinica (id_clinica, nome, cnpj, telefone, email, endereco) VALUES  (4, 'Saude Pet', '44444444000144', '1133330004','contato@saudepet.com', 'Rua D, 400');
+INSERT INTO Clinica (id_clinica, nome, cnpj, telefone, email, endereco) VALUES  (5, 'Vet Mais', '55555555000155', '1133330005','contato@vetmais.com', 'Rua E, 500');
+
+--insert responsavel
+INSERT INTO Responsavel (id_responsavel, cpf, data_nascimento, id_usuario) VALUES (1, '11111111111', DATE '1995-03-10', 1);
+INSERT INTO Responsavel (id_responsavel, cpf, data_nascimento, id_usuario) VALUES (2, '22222222222', DATE '1990-07-21', 2);
+INSERT INTO Responsavel (id_responsavel, cpf, data_nascimento, id_usuario) VALUES (3, '33333333333', DATE '1998-11-05', 3);
+INSERT INTO Responsavel (id_responsavel, cpf, data_nascimento, id_usuario) VALUES (4, '44444444444', DATE '1993-02-15', 6);
+INSERT INTO Responsavel (id_responsavel, cpf, data_nascimento, id_usuario) VALUES (5, '55555555555', DATE '1988-09-30', 7);
+
+--insert veterinario
+INSERT INTO Veterinario (id_veterinario, crv, especialidade, id_usuario, id_clinica) VALUES (1, 'CRV1001', 'Clinica Geral', 4, 1);
+INSERT INTO Veterinario (id_veterinario, crv, especialidade, id_usuario, id_clinica) VALUES (2, 'CRV1002', 'Dermatologia', 5, 2);
+INSERT INTO Veterinario (id_veterinario, crv, especialidade, id_usuario, id_clinica) VALUES (3, 'CRV1003', 'Cardiologia', 8, 3);
+INSERT INTO Veterinario (id_veterinario, crv, especialidade, id_usuario, id_clinica) VALUES (4, 'CRV1004', 'Ortopedia', 9, 4);
+INSERT INTO Veterinario (id_veterinario, crv, especialidade, id_usuario, id_clinica) VALUES (5, 'CRV1005', 'Clinica Geral', 10, 5);
+
+--insert pet
+INSERT INTO Pet (id_pet, nome, sexo, raca, especie, data_nascimento, id_responsavel) VALUES (1, 'Rex', 'MACHO', 'Labrador', 'CACHORRO',DATE '2021-03-15', 1);
+INSERT INTO Pet (id_pet, nome, sexo, raca, especie, data_nascimento, id_responsavel) VALUES (2, 'Luna', 'FEMEA', 'Siamês', 'GATO', DATE '2022-07-10', 2);
+INSERT INTO Pet (id_pet, nome, sexo, raca, especie, data_nascimento, id_responsavel) VALUES (3, 'Thor', 'MACHO', 'Golden Retriever', 'CACHORRO',DATE '2020-11-05', 3);
+INSERT INTO Pet (id_pet, nome, sexo, raca, especie, data_nascimento, id_responsavel) VALUES (4, 'Mel', 'FEMEA', 'SRD', 'CACHORRO',DATE '2023-01-20', 4);
+INSERT INTO Pet (id_pet, nome, sexo, raca, especie, data_nascimento, id_responsavel) VALUES (5, 'Nina', 'FEMEA', 'Persa', 'GATO',DATE '2019-06-12', 5);
+
+--insert vacina
+INSERT INTO Vacina (id_vacina, nome, descricao) VALUES (1, 'Antirrabica', 'Vacina para prevencao da raiva');
+INSERT INTO Vacina (id_vacina, nome, descricao) VALUES (2, 'V8', 'Vacina multipla para caes');
+INSERT INTO Vacina (id_vacina, nome, descricao) VALUES (3, 'V10', 'Vacina multipla para caes');
+INSERT INTO Vacina (id_vacina, nome, descricao) VALUES (4, 'Triplice Felina', 'Vacina multipla para gatos');
+INSERT INTO Vacina (id_vacina, nome, descricao) VALUES (5, 'Giardia', 'Vacina auxiliar na prevencao da giardiase');
+
+--insert aplicacao_vacina
+INSERT INTO Aplicacao_vacina (id_aplicacao_vacina, data_aplicacao, dose, observacao,id_pet, id_vacina, id_veterinario) VALUES (1, DATE '2026-04-10', '1 DOSE','Aplicacao sem intercorrencias',1, 1, 1);
+INSERT INTO Aplicacao_vacina (id_aplicacao_vacina, data_aplicacao, dose, observacao,id_pet, id_vacina, id_veterinario) VALUES (2, DATE '2026-05-12', 'REFORCO','Reforco anual',2, 4, 2);
+INSERT INTO Aplicacao_vacina (id_aplicacao_vacina, data_aplicacao, dose, observacao,id_pet, id_vacina, id_veterinario) VALUES (3, DATE '2026-06-15', '1 DOSE','Normal',3, 2, 3);
+INSERT INTO Aplicacao_vacina (id_aplicacao_vacina, data_aplicacao, dose, observacao,id_pet, id_vacina, id_veterinario) VALUES (4, DATE '2026-02-20', 'REFORCO','Registro de vacina aplicada anteriormente',4, 3, 3);
+INSERT INTO Aplicacao_vacina (id_aplicacao_vacina, data_aplicacao, dose, observacao,id_pet, id_vacina, id_veterinario) VALUES (5, DATE '2026-03-11', '1 DOSE','Tutor nao informou o profissional',5, 4, 4);
+
+--insert consulta
+INSERT INTO Consulta (id_consulta, data_hora, motivo, observacao, status,id_pet, id_veterinario, id_clinica) VALUES (1, DATE '2026-08-10','Consulta de rotina','Animal em boas condicoes','REALIZADA',1, 1, 1);
+INSERT INTO Consulta (id_consulta, data_hora, motivo, observacao, status,id_pet, id_veterinario, id_clinica) VALUES (2, DATE '2026-08-12','Coceira persistente','Possivel quadro alergico','REALIZADA',2, 2, 2);
+INSERT INTO Consulta (id_consulta, data_hora, motivo, observacao, status,id_pet, id_veterinario, id_clinica) VALUES (3, DATE '2026-08-15','Avaliacao cardiaca','Acompanhamento preventivo','REALIZADA',3, 3, 3);
+INSERT INTO Consulta (id_consulta, data_hora, motivo, observacao, status,id_pet, id_veterinario, id_clinica) VALUES (4, DATE '2026-09-20','Avaliacao ortopedica','Acompanhamento preventivo','AGENDADA',4, 4, 4);
+INSERT INTO Consulta (id_consulta, data_hora, motivo, observacao, status,id_pet, id_veterinario, id_clinica) VALUES (5, DATE '2026-09-22','Consulta de rotina','Avaliacao ortopedica','AGENDADA',5, 5, 5);
+
+--insert lembrete
+INSERT INTO Lembrete (id_lembrete, titulo, descricao, data_hora, status, id_pet) VALUES (1, 'Reforco de vacina','Verificar data do reforco da vacina',DATE'2026-10-10','PENDENTE', 1);
+INSERT INTO Lembrete (id_lembrete, titulo, descricao, data_hora, status, id_pet) VALUES (2, 'Consulta dermatologica','Retorno para avaliacao',DATE'2026-09-18','PENDENTE', 2);
+INSERT INTO Lembrete (id_lembrete, titulo, descricao, data_hora, status, id_pet) VALUES (3, 'Medicamento','Administrar medicamento prescrito',DATE '2026-09-08','PENDENTE', 3);
+INSERT INTO Lembrete (id_lembrete, titulo, descricao, data_hora, status, id_pet) VALUES (4, 'Consulta ortopedica','Comparecer a clinica',DATE '2026-09-20','PENDENTE', 4);
+INSERT INTO Lembrete (id_lembrete, titulo, descricao, data_hora, status, id_pet) VALUES (5, 'Consulta anual','Realizar avaliacao preventiva',DATE '2026-09-22','PENDENTE', 5);
+
+--insert sensor
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (1, 'TEMPERATURA', 'C', 'ATIVO', 1);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (2, 'ATIVIDADE', 'METROS', 'ATIVO', 1);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (3, 'TEMPERATURA', 'C', 'ATIVO', 2);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (4, 'ATIVIDADE', 'METROS', 'ATIVO', 2);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (5, 'TEMPERATURA', 'C', 'ATIVO', 3);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (6, 'ATIVIDADE', 'METROS', 'ATIVO', 3);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (7, 'TEMPERATURA', 'C', 'ATIVO', 4);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (8, 'ATIVIDADE', 'METROS', 'ATIVO', 4);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (9, 'TEMPERATURA', 'C', 'ATIVO', 5);
+INSERT INTO Sensor (id_sensor,tipo,unidade, status, id_pet) VALUES (10, 'ATIVIDADE', 'METROS', 'ATIVO', 5);
+
+--insert leitura
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (1, DATE '2026-09-01', 38.50, 1);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (2, DATE '2026-09-02', 38.70, 1);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (3, DATE '2026-09-01', 72.00, 2);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (4, DATE '2026-09-02', 68.00, 2);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (5, DATE '2026-09-01', 38.90, 3);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (6, DATE '2026-09-02', 39.10, 3);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (7, DATE '2026-09-01', 65.00, 4);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (8, DATE '2026-09-02', 61.00, 4);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (9, DATE '2026-09-01', 38.40, 5);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (10, DATE '2026-09-02', 38.60, 5);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (11, DATE '2026-09-01', 80.00, 6);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (12, DATE '2026-09-02', 77.00, 6);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (13, DATE '2026-09-01', 38.80, 7);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (14, DATE '2026-09-02', 39.00, 7);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (15, DATE '2026-09-01', 55.00, 8);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (16, DATE '2026-09-02', 48.00, 8);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (17, DATE '2026-09-01', 38.60, 9);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (18, DATE '2026-09-02', 38.70, 9);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (19, DATE '2026-09-01', 60.00, 10);
+INSERT INTO Leitura (id_leitura, data_registro, valor, id_sensor) VALUES (20, DATE '2026-09-02', 57.00, 10);
+
+
+
+
+--function(1) pega os dados de consulta e coloca num json
+CREATE OR REPLACE FUNCTION fn_consulta_json(
+    p_id_consulta IN NUMBER
+)  RETURN VARCHAR2
+IS
+    v_json VARCHAR2(4000);
+    v_pet Pet.nome%TYPE;
+    v_veterinario Usuario.nome%TYPE;
+    v_clinica Clinica.nome%TYPE;
+    v_data Consulta.data_hora%TYPE;
+    v_motivo Consulta.motivo%TYPE;
+    v_status Consulta.status%TYPE;
+    e_id_invalido EXCEPTION;
+    
+BEGIN
+
+    IF p_id_consulta IS NULL OR p_id_consulta <= 0 THEN RAISE e_id_invalido;
+    END IF;
+    
+
+    SELECT p.nome,u.nome, c.nome,co.data_hora, co.motivo, co.status
+    INTO   v_pet,v_veterinario,v_clinica,v_data,v_motivo,v_status
+    FROM    Consulta co 
+    JOIN Pet p 
+        ON co.id_pet = p.id_pet
+    JOIN Veterinario v
+        ON co.id_veterinario = v.id_veterinario
+    JOIN Usuario u
+        ON v.id_usuario = u.id_usuario
+    JOIN Clinica c
+        ON co.id_clinica = c.id_clinica
+    WHERE co.id_consulta = p_id_consulta;
+            
+    v_json :=
+        '{'||
+        '"id_consulta":' || p_id_consulta || ',' ||
+        '"pet":"' || v_pet || '",' ||
+        '"veterinario":"' || v_veterinario || '",' ||
+        '"clinica":"' || v_clinica || '",' ||
+        '"data":"' || TO_CHAR(v_data, 'YYYY-MM-DD') || '",' ||
+        '"motivo":"' || v_motivo || '",' ||
+        '"status":"' || v_status || '"' ||
+        '}';
+    
+    RETURN v_json;
+
+EXCEPTION
+    
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Consulta nao encontrada.');
+        RETURN '{"erro":"Consulta nao encontrada"}';
+
+    WHEN e_id_invalido THEN
+    DBMS_OUTPUT.PUT_LINE('ID da consulta invalido.');
+    RETURN '{"erro":"ID da consulta invalido"}';
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Erro: ' || SQLERRM);
+        RETURN '{"erro":"' || REPLACE(SQLERRM, '"', '''') || '"}';
+            
+END;
+/
+
+--function(02) validacao cpf
+CREATE OR REPLACE FUNCTION fn_validar_cpf(
+    p_cpf IN VARCHAR2
+)RETURN VARCHAR2
+IS 
+    v_soma NUMBER :=0;
+    v_resto NUMBER;
+    v_digito NUMBER;
+    v_digito1 NUMBER;
+    v_digito2 NUMBER;
+    I NUMBER;
+    
+    e_cpf_nao_informado EXCEPTION;
+    e_tamanho_invalido EXCEPTION;
+
+BEGIN
+
+    
+    IF p_cpf IS NULL THEN RAISE e_cpf_nao_informado;   
+    END IF;
+    
+    IF LENGTH(p_cpf) != 11 THEN RAISE e_tamanho_invalido; 
+    END IF;
+    
+    --primeiro digito
+    v_soma := 0;
+    i := 1;
+    
+    WHILE i <= 9 LOOP
+    
+    v_digito := TO_NUMBER(SUBSTR(p_cpf, i, 1));
+        
+    v_soma := v_soma + v_digito * (11 - i);
+
+    i := i + 1;
+    
+    END LOOP;
+    
+    v_resto := MOD(v_soma,11);
+    
+    IF v_resto < 2 THEN
+        v_digito1 :=0;
+    ELSE
+        v_digito1 :=11 - v_resto;
+    END IF;
+    
+    --segundo digito
+    
+    v_soma := 0;
+    i :=1;
+    
+    WHILE i <= 10 LOOP
+    
+    v_digito := TO_NUMBER(SUBSTR(p_cpf,i,1));
+    
+    v_soma := v_soma + v_digito * (12 - i);
+    
+    i := i +1;
+    
+    END LOOP;
+    
+    v_resto := MOD(v_soma, 11);
+    
+    IF v_resto  <2 THEN
+    
+        v_digito2 :=0;
+    
+    ELSE
+        
+        v_digito2 := 11- v_resto;
+    
+    END IF;
+     
+    
+    IF v_digito1 = TO_NUMBER(SUBSTR(p_cpf,10,1)) AND v_digito2 = TO_NUMBER(SUBSTR(p_cpf,11,1)) THEN
+        DBMS_OUTPUT.PUT_LINE('CPF valido.');
+        RETURN 'CPF VALIDO';
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('CPF invalido.');
+        RETURN 'CPF INVALIDO';
+    END IF;
+
+EXCEPTION
+
+    WHEN e_cpf_nao_informado THEN
+        DBMS_OUTPUT.PUT_LINE('CPF nao informado.');
+        RETURN 'CPF INVALIDO';
+    
+    WHEN e_tamanho_invalido THEN
+        DBMS_OUTPUT.PUT_LINE('CPF deve possuir 11 numeros.');
+        RETURN 'CPF INVALIDO';
+
+    WHEN VALUE_ERROR THEN
+        DBMS_OUTPUT.PUT_LINE('CPF invalido. Informa apenas numeros');
+        RETURN 'CPF INVALIDO';
+    
+    WHEN INVALID_NUMBER THEN
+        DBMS_OUTPUT.PUT_LINE('Erro na conversao numerica do CPF.');
+        RETURN 'CPF INVALIDO';
+     
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Erro inesperado: '||SQLERRM);
+        RETURN 'ERRO';
+END;
+/
+
+--procedure(1) relacionada a function(1) leitura e impressão dos dados
+
+CREATE OR REPLACE PROCEDURE pr_consulta_pet_json(
+    p_id_pet IN NUMBER
 )
 IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data       DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Tutor (id_tutor, nome, telefone, email)
-    VALUES (v_id_tutor, v_nome, v_telefone, v_email);
-    DBMS_OUTPUT.PUT_LINE('Tutor inserido com sucesso');
- 
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Tutor duplicado';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_tutor', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Tutor já existe');
- 
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_tutor', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
- 
--- 2. PET
-CREATE OR REPLACE PROCEDURE inserir_pet (
-    v_id_pet   INTEGER, v_nome VARCHAR2, v_idade INTEGER,
-    v_especie  VARCHAR2, v_raca VARCHAR2, v_id_tutor INTEGER
-) IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data       DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Pet (id_pet, nome, idade, especie, raca, id_tutor)
-    VALUES (v_id_pet, v_nome, v_idade, v_especie, v_raca, v_id_tutor);
-    DBMS_OUTPUT.PUT_LINE('Pet inserido com sucesso');
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Pet duplicado';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_pet', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Pet já existe');
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_pet', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
--- 3. CLINICA
-CREATE OR REPLACE PROCEDURE inserir_clinica (
-    v_id_clinica INTEGER, v_nome VARCHAR2, v_endereco VARCHAR2, v_telefone VARCHAR2
-) IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data       DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Clinica (id_clinica, nome, endereco, telefone) 
-    VALUES (v_id_clinica, v_nome, v_endereco, v_telefone);
-    DBMS_OUTPUT.PUT_LINE('Clínica inserida com sucesso');
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Clínica duplicada';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_clinica', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Clínica já existe');
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_clinica', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
- 
--- 4. CONSULTA
-CREATE OR REPLACE PROCEDURE inserir_consulta (
-    v_id_consulta INTEGER, v_data_con DATE, v_descricao VARCHAR2,
-    v_id_pet INTEGER, v_id_clinica INTEGER
-) IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data_sys   DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Consulta (id_consulta, data_consulta, descricao, id_pet, id_clinica) 
-    VALUES (v_id_consulta, v_data_con, v_descricao, v_id_pet, v_id_clinica);
-    DBMS_OUTPUT.PUT_LINE('Consulta inserida com sucesso');
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Consulta duplicada';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_consulta', v_user_log, v_data_sys, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Consulta já existe');
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_consulta', v_user_log, v_data_sys, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
- 
--- 5. VACINA
-CREATE OR REPLACE PROCEDURE inserir_vacina (
-    v_id_vacina INTEGER, v_nome VARCHAR2, v_descricao VARCHAR2
-) IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data       DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Vacina (id_vacina, nome, descricao)
-    VALUES (v_id_vacina, v_nome, v_descricao);
-    DBMS_OUTPUT.PUT_LINE('Vacina inserida com sucesso');
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Vacina duplicada';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_vacina', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Vacina já existe');
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_vacina', v_user_log, v_data, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
- 
--- 6. HISTORICO
-CREATE OR REPLACE PROCEDURE inserir_historico (
-    v_id_historico INTEGER, v_descricao VARCHAR2, v_data_reg DATE, v_id_pet INTEGER
-) IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data_sys   DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Historico_saude (id_historico, descricao, data_registro, id_pet)
-    VALUES (v_id_historico, v_descricao, v_data_reg, v_id_pet);
-    DBMS_OUTPUT.PUT_LINE('Histórico inserido com sucesso');
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Histórico duplicado';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_historico', v_user_log, v_data_sys, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Histórico já existe');
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_historico', v_user_log, v_data_sys, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
- 
--- 7. APLICACAO VACINA
-CREATE OR REPLACE PROCEDURE inserir_aplicacao_vacina (
-    v_id_aplicacao INTEGER, v_data_ap DATE, v_id_vacina INTEGER, v_id_pet INTEGER
-) IS
-    v_user_log   VARCHAR2(100) := USER;
-    v_data_sys   DATE          := SYSDATE;
-    v_err_code   NUMBER;
-    v_err_msg    VARCHAR2(200);
-BEGIN
-    INSERT INTO Aplicacao_vacina (id_aplicacao, data_aplicacao, id_vacina, id_pet)
-    VALUES (v_id_aplicacao, v_data_ap, v_id_vacina, v_id_pet);
-    DBMS_OUTPUT.PUT_LINE('Aplicação registrada');
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := 'Aplicação duplicada';
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_aplicacao_vacina', v_user_log, v_data_sys, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: Aplicação já existe');
-    WHEN OTHERS THEN
-        v_err_code := SQLCODE;
-        v_err_msg  := SUBSTR(SQLERRM, 1, 200);
-        INSERT INTO Log_erro (nome_procedure, usuario, data_erro, codigo_erro, mensagem_erro) 
-        VALUES ('inserir_aplicacao_vacina', v_user_log, v_data_sys, v_err_code, v_err_msg);
-        DBMS_OUTPUT.PUT_LINE('ERRO: ' || v_err_msg);
-END;
-/
---Inserções de dados válidas (deve funcionar tudo)
-BEGIN
-    inserir_tutor(1, 'Lucas', '11999999999', 'lucas@email.com');
-    inserir_tutor(2, 'Ana', '11988888888', 'ana@email.com');
-    inserir_tutor(3, 'Carlos', '11977777777', 'carlos@email.com');
-    inserir_tutor(4, 'Marina', '11966666666', 'marina@email.com');
-    inserir_tutor(5, 'João', '11955555555', 'joao@email.com');
-END;
-/
- 
-BEGIN
-    inserir_pet(1, 'Rex', 5, 'Cachorro', 'Labrador', 1);
-    inserir_pet(2, 'Mia', 3, 'Gato', 'Siames', 2);
-    inserir_pet(3, 'Thor', 4, 'Cachorro', 'Pitbull', 3);
-    inserir_pet(4, 'Luna', 2, 'Gato', 'Persa', 4);
-    inserir_pet(5, 'Bob', 6, 'Cachorro', 'Poodle', 5);
-END;
-/
- 
-BEGIN
-    inserir_clinica(1, 'PetCare', 'Rua A, 100', '1130000001');
-    inserir_clinica(2, 'AnimalLife', 'Rua B, 200', '1130000002');
-    inserir_clinica(3, 'VetCenter', 'Rua C, 300', '1130000003');
-    inserir_clinica(4, 'SaúdePet', 'Rua D, 400', '1130000004');
-    inserir_clinica(5, 'CliniPet', 'Rua E, 500', '1130000005');
-END;
-/
- 
-BEGIN
-    inserir_vacina(1, 'Antirrábica', 'Contra raiva');
-    inserir_vacina(2, 'V10', 'Vacina múltipla cães');
-    inserir_vacina(3, 'V4', 'Vacina gatos');
-    inserir_vacina(4, 'Gripe Canina', 'Contra gripe');
-    inserir_vacina(5, 'Leishmaniose', 'Doença grave');
-END;
-/
- 
-BEGIN
-    inserir_consulta(1, SYSDATE, 'Check-up', 1, 1);
-    inserir_consulta(2, SYSDATE, 'Vacinação', 2, 2);
-    inserir_consulta(3, SYSDATE, 'Cirurgia', 3, 3);
-    inserir_consulta(4, SYSDATE, 'Exame rotina', 4, 4);
-    inserir_consulta(5, SYSDATE, 'Alergia', 5, 5);
-END;
-/
- 
-BEGIN
-    inserir_historico(1, 'Saudável', SYSDATE, 1);
-    inserir_historico(2, 'Teve gripe', SYSDATE, 2);
-    inserir_historico(3, 'Cirurgia recente', SYSDATE, 3);
-    inserir_historico(4, 'Vacinação em dia', SYSDATE, 4);
-    inserir_historico(5, 'Alergia alimentar', SYSDATE, 5);
-END;
-/
- 
-BEGIN
-    inserir_aplicacao_vacina(1, SYSDATE, 1, 1);
-    inserir_aplicacao_vacina(2, SYSDATE, 2, 2);
-    inserir_aplicacao_vacina(3, SYSDATE, 3, 3);
-    inserir_aplicacao_vacina(4, SYSDATE, 4, 4);
-    inserir_aplicacao_vacina(5, SYSDATE, 5, 5);
-END;
-/
- 
- 
--- RELATÓRIO 1: CONSULTAS POR PET E TUTOR
--- Mostra quantas consultas cada pet teve,
--- junto com o nome do tutor
-DECLARE
-BEGIN
-    FOR registro IN (
-        SELECT 
-            p.nome AS pet,
-            t.nome AS tutor,
-            COUNT(c.id_consulta) AS total_consultas
-        FROM Pet p
-        -- Junta pet com tutor (relação obrigatória)
-        JOIN Tutor t ON p.id_tutor = t.id_tutor
-        -- LEFT JOIN para contar mesmo pets sem consulta
-        LEFT JOIN Consulta c ON p.id_pet = c.id_pet
-        -- Agrupa por pet e tutor para contar corretamente
-        GROUP BY p.nome, t.nome
-        -- Ordena do que tem mais consultas para o menor
-        ORDER BY total_consultas DESC
-    )
-    LOOP
-        -- Exibe o resultado no console
-        DBMS_OUTPUT.PUT_LINE(
-            'Pet: ' || registro.pet ||
-            ' | Tutor: ' || registro.tutor ||
-            ' | Consultas: ' || registro.total_consultas
-        );
-    END LOOP;
-END;
-/
- 
- 
--- RELATÓRIO 2: VACINAS POR PET
--- Mostra quantas vacinas cada pet recebeu
-DECLARE
-BEGIN
-    FOR registro IN (
-        SELECT 
-            p.nome AS pet,
-            COUNT(a.id_aplicacao) AS total_vacinas
-        FROM Pet p
-        -- LEFT JOIN para incluir pets sem vacina
-        LEFT JOIN Aplicacao_vacina a ON p.id_pet = a.id_pet
-        -- Agrupa por pet
-        GROUP BY p.nome
-        -- Ordena do maior para o menor número de vacinas
-        ORDER BY total_vacinas DESC
-    )
-    LOOP
-        DBMS_OUTPUT.PUT_LINE(
-            'Pet: ' || registro.pet ||
-            ' | Vacinas: ' || registro.total_vacinas
-        );
-    END LOOP;
-END;
-/
- 
+    v_quantidade NUMBER;
+    v_consultas NUMBER;
 
--- RELATÓRIO 3: CONSULTAS POR CLÍNICA
--- Mostra quantas consultas cada clínica realizou
-DECLARE
+    e_id_invalido EXCEPTION;
+    e_pet_nao_encontrado EXCEPTION;
+    e_sem_consultas EXCEPTION;
+
 BEGIN
-    FOR registro IN (
-        SELECT 
-            c.nome AS clinica,
-            COUNT(co.id_consulta) AS total_consultas
-        FROM Clinica c
-        -- LEFT JOIN para incluir clínicas sem consultas
-        LEFT JOIN Consulta co ON c.id_clinica = co.id_clinica
-        -- Agrupa por clínica
-        GROUP BY c.nome
-        -- Ordena pela quantidade de consultas
-        ORDER BY total_consultas DESC
-    )
-    LOOP
-        DBMS_OUTPUT.PUT_LINE(
-            'Clínica: ' || registro.clinica ||
-            ' | Consultas: ' || registro.total_consultas
-        );
-    END LOOP;
-END;
-/
+
+    IF p_id_pet IS NULL OR p_id_pet <= 0 THEN RAISE e_id_invalido;
+    END IF;
+        
 
 
--- FUNCTION: total_consultas_pet
--- Retorna a quantidade de consultas de um pet específico
--- Recebe: ID do pet
--- Retorna: número total de consultas
-CREATE OR REPLACE FUNCTION total_consultas_pet (p_id_pet INTEGER)
-RETURN INTEGER
-IS
-    v_total INTEGER; -- variável para armazenar o total
-BEGIN
-    -- Conta quantas consultas existem para o pet informado
     SELECT COUNT(*)
-    INTO v_total
+    INTO v_quantidade
+    FROM Pet
+    WHERE id_pet = p_id_pet;
+    
+    
+    IF v_quantidade = 0 THEN RAISE e_pet_nao_encontrado;
+    END IF;    
+         
+    SELECT COUNT(*)
+    INTO v_consultas
     FROM Consulta
     WHERE id_pet = p_id_pet;
+    
+    IF v_consultas = 0 THEN RAISE e_sem_consultas;
+    END IF;    
+         
+         
+    
+        FOR r IN( SELECT p.nome, c.id_consulta
+                  FROM Pet p
+                  JOIN Consulta c
+                    ON p.id_pet = c.id_pet
+                  WHERE p.id_pet = p_id_pet
+                  ORDER BY c.data_hora)
+        LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                fn_consulta_json(r.id_consulta)    
+                );
+        END LOOP;
+    
 
-    -- Retorna o valor encontrado
-    RETURN v_total;
+EXCEPTION
+    
+    WHEN e_id_invalido THEN
+        INSERT INTO Log_Erro (nome_procedure,usuario,codigo_erro,mensagem_erro)
+        VALUES ('PR_CONSULTA_PET_JSON',USER,-20001,'ID do pet invalido');
+        DBMS_OUTPUT.PUT_LINE('ID do pet invalido.');
+
+    WHEN e_pet_nao_encontrado THEN
+        INSERT INTO Log_Erro (nome_procedure,usuario,codigo_erro,mensagem_erro)
+        VALUES ('PR_CONSULTA_PET_JSON',USER,-20002,'Pet nao encontrado.');
+        DBMS_OUTPUT.PUT_LINE('Pet nao encontrado.');
+    
+    WHEN e_sem_consultas THEN
+        INSERT INTO Log_Erro (nome_procedure,usuario,codigo_erro,mensagem_erro)
+        VALUES ('PR_CONSULTA_PET_JSON',USER,-20003,'O pet nao possui consultas cadastradas.');
+        DBMS_OUTPUT.PUT_LINE('O pet nao possui consultas cadastradas.');
+    
+    WHEN OTHERS THEN
+    
+        INSERT INTO  Log_erro(nome_procedure,usuario,data_erro,codigo_erro,mensagem_erro)
+        VALUES('PR_CONSULTA_PET_JSON',USER,SYSDATE,SQLCODE,SQLERRM);
+    
+        DBMS_OUTPUT.PUT_LINE('Erro inesperado: '||SQLERRM);
+    
 END;
 /
+    
+--procedure 2 relatorio_leitura atividade dos pets
+CREATE OR REPLACE PROCEDURE pr_relatorio_leituras
+IS
+    
+    v_especie_anterior Pet.especie%TYPE;
+    v_pet_anterior Pet.nome%TYPE;
 
+    v_soma_pet NUMBER := 0;
+    v_subtotal_especie NUMBER := 0;
+    v_total_geral NUMBER := 0;
 
--- TESTE DA FUNCTION
--- Exibe no console a quantidade de consultas do pet 1
+    v_primeira_linha NUMBER := 1;
+    
+    v_quantidade NUMBER;
+    v_valores_invalidos NUMBER;
+    
+    e_sem_leituras EXCEPTION;
+    e_dados_insuficientes EXCEPTION;
+    e_valor_negativo EXCEPTION;
+
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('Total consultas: ' || total_consultas_pet(1));
+
+    SELECT COUNT(*)
+    INTO v_quantidade
+    FROM Leitura l
+    JOIN Sensor s
+        ON l.id_sensor = s.id_sensor
+    WHERE s.tipo = 'ATIVIDADE';
+    
+    IF v_quantidade = 0 THEN RAISE e_sem_leituras;
+    END IF;
+    
+    IF v_quantidade < 5 THEN RAISE e_dados_insuficientes;
+    END IF;
+
+
+    SELECT COUNT(*)
+    INTO v_valores_invalidos
+    FROM Leitura l
+    JOIN Sensor s
+        ON l.id_sensor = s.id_sensor
+    WHERE s.tipo = 'ATIVIDADE'
+      AND l.valor < 0;
+      
+     IF v_valores_invalidos > 0 THEN  RAISE e_valor_negativo;
+     END IF;
+
+    FOR r IN( SELECT p.especie, p.nome, l.valor
+              FROM Leitura l
+              JOIN Sensor s
+                ON l.id_sensor = s.id_sensor
+              JOIN Pet p
+                ON s.id_pet = p.id_pet
+              WHERE s.tipo = 'ATIVIDADE'
+              ORDER BY
+                p.especie,
+                p.nome
+            
+    )
+    LOOP
+    
+    IF v_primeira_linha = 1 THEN
+        
+          v_especie_anterior := r.especie;
+          v_pet_anterior := r.nome;
+          v_primeira_linha := 0;    
+
+    END IF;
+    
+    IF r.nome != v_pet_anterior OR r.especie != v_especie_anterior THEN
+        DBMS_OUTPUT.PUT_LINE( v_especie_anterior ||' | ' ||v_pet_anterior ||' | ' ||v_soma_pet);
+
+        v_soma_pet := 0;
+
+    END IF;
+    
+    IF r.especie != v_especie_anterior THEN
+         DBMS_OUTPUT.PUT_LINE(v_especie_anterior ||' | NULL | ' ||v_subtotal_especie);
+         DBMS_OUTPUT.PUT_LINE('-----------------------');
+        
+        
+        
+         v_subtotal_especie := 0;
+
+    END IF;
+    
+        v_especie_anterior := r.especie;
+        v_pet_anterior := r.nome;
+        
+        v_soma_pet := v_soma_pet + r.valor;
+        
+        v_subtotal_especie := v_subtotal_especie + r.valor;
+        
+        v_total_geral := v_total_geral + r.valor;
+    
+    END LOOP;
+    
+    IF v_primeira_linha = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(v_especie_anterior ||' | ' ||v_pet_anterior ||' | ' ||v_soma_pet);
+        DBMS_OUTPUT.PUT_LINE(v_especie_anterior ||' | NULL | ' ||v_subtotal_especie);
+        DBMS_OUTPUT.PUT_LINE('-----------------------');
+        DBMS_OUTPUT.PUT_LINE('NULL | NULL | ' ||v_total_geral);
+    
+    ELSE
+        
+        DBMS_OUTPUT.PUT_LINE('Nenhuma leitura encontrada.');
+    
+    END IF;
+
+EXCEPTION
+
+    WHEN e_sem_leituras THEN
+         DBMS_OUTPUT.PUT_LINE('Nenhuma leitura de atividade encontrada.');
+    
+    WHEN e_dados_insuficientes THEN 
+        DBMS_OUTPUT.PUT_LINE( 'Quantidade insuficiente de leituras. Minimo: 5.'); 
+     
+    WHEN e_valor_negativo THEN  
+        DBMS_OUTPUT.PUT_LINE('Existem leituras de atividade com valor negativo.');
+    
+    WHEN OTHERS THEN
+        INSERT INTO  Log_erro(nome_procedure,usuario,data_erro,codigo_erro,mensagem_erro)
+        VALUES('PR_RELATORIO_LEITURAS',USER,SYSDATE,SQLCODE,SQLERRM);
+        DBMS_OUTPUT.PUT_LINE('Erro inesperado: ' || SQLERRM);
+
 END;
 /
 
+SET SERVEROUTPUT ON;
 
--- TRIGGER: validar_idade_pet
--- Impede inserir ou atualizar um pet com idade negativa
--- Dispara automaticamente antes de INSERT ou UPDATE
-CREATE OR REPLACE TRIGGER validar_idade_pet
-BEFORE INSERT OR UPDATE ON Pet
+--triggers auditoria 
+CREATE OR REPLACE TRIGGER trg_auditoria_consulta
+AFTER INSERT OR UPDATE OR DELETE ON Consulta
+
 FOR EACH ROW
+
 BEGIN
-    -- Verifica se a idade é menor que zero
-    IF :NEW.idade IS NOT NULL AND :NEW.idade < 0 THEN
-        -- Gera erro e impede a operação
-        RAISE_APPLICATION_ERROR(-20001, 'Idade não pode ser negativa');
+    IF INSERTING THEN
+        
+        INSERT INTO Auditoria(
+            usuario,
+            operacao,
+            data_operacao,
+            valor_antigo,
+            valor_novo,
+            tabela_afetada
+        )
+        VALUES(USER,'INSERT',SYSDATE,NULL,'ID_CONSULTA=' || :NEW.id_consulta ||', STATUS=' || :NEW.status ||', ID_PET=' || :NEW.id_pet,'CONSULTA');
+    
+
+    ELSIF UPDATING THEN
+    
+        INSERT INTO Auditoria(
+            usuario,
+            operacao,
+            data_operacao,
+            valor_antigo,
+            valor_novo,
+            tabela_afetada
+        )
+        VALUES(USER,'UPDATE',SYSDATE,'ID_CONSULTA=' || :OLD.id_consulta ||', STATUS=' || :OLD.status ||', ID_PET=' || :OLD.id_pet,'ID_CONSULTA=' || :NEW.id_consulta ||', STATUS=' || :NEW.status ||', ID_PET=' || :NEW.id_pet,'CONSULTA');
+        
+    ELSIF DELETING THEN  
+    
+        INSERT INTO Auditoria(
+            usuario,
+            operacao,
+            data_operacao,
+            valor_antigo,
+            valor_novo,
+            tabela_afetada
+        )
+        VALUES (USER,'DELETE',SYSDATE,'ID_CONSULTA=' || :OLD.id_consulta ||', STATUS=' || :OLD.status ||', ID_PET=' || :OLD.id_pet,NULL,'CONSULTA');
+    
     END IF;
 END;
 /
 
+-- 1. TESTES FUNCTION 1 - CONSULTA PARA JSON
 
--- VIEW: vw_resumo_pet
--- Cria uma visão consolidada com:
--- - Nome do pet
--- - Nome do tutor
--- - Total de consultas
--- - Total de vacinas
-CREATE OR REPLACE VIEW vw_resumo_pet AS
-SELECT 
-    p.nome AS pet,
-    t.nome AS tutor,
-    COUNT(DISTINCT c.id_consulta) AS consultas,
-    COUNT(DISTINCT a.id_aplicacao) AS vacinas
-FROM Pet p
--- Relaciona pet com tutor
-JOIN Tutor t ON p.id_tutor = t.id_tutor
--- LEFT JOIN para incluir pets sem consultas
-LEFT JOIN Consulta c ON p.id_pet = c.id_pet
--- LEFT JOIN para incluir pets sem vacinas
-LEFT JOIN Aplicacao_vacina a ON p.id_pet = a.id_pet
--- Agrupa para realizar as contagens corretamente
-GROUP BY p.nome, t.nome;
+-- Caso normal
+SELECT fn_consulta_json(1) AS consulta_json FROM dual;
 
+-- Excecao: ID invalido
+SELECT fn_consulta_json(-1) AS consulta_json FROM dual;
 
--- CONSULTA NA VIEW
--- Exibe o resumo geral dos pets
-SELECT * FROM vw_resumo_pet;
+-- Excecao: consulta inexistente
+SELECT fn_consulta_json(9999) AS consulta_json FROM dual;
 
+-- 2. TESTES FUNCTION 2 - VALIDACAO DE CPF
 
---DADOS PARA LOG_ERROR(deve dar erro)
--- 1. DUPLICIDADE
+-- CPF valido
+SELECT fn_validar_cpf('52998224725') AS resultado FROM dual;
+
+-- CPF valido
+SELECT fn_validar_cpf('11144477735') AS resultado FROM dual;
+
+-- CPF com digitos verificadores invalidos
+SELECT fn_validar_cpf('52998224726') AS resultado FROM dual;
+
+-- Excecao: tamanho invalido
+SELECT fn_validar_cpf('12345') AS resultado FROM dual;
+
+-- Excecao: caracteres nao numericos
+SELECT fn_validar_cpf('529982247AB') AS resultado FROM dual;
+
+-- Excecao: CPF nao informado
+SELECT fn_validar_cpf(NULL) AS resultado FROM dual;
+
+-- 3. TESTES PROCEDURE 1 - CONSULTAS DO PET EM JSON
+-- Caso normal
 BEGIN
-    inserir_tutor(1, 'Lucas', '11999999999', 'lucas@email.com');
+    pr_consulta_pet_json(1);
 END;
 /
- 
--- 2. FK inválida (Tutor inexistente)
+-- Excecao: ID negativo
 BEGIN
-    inserir_pet(10, 'Fantasma', 3, 'Cachorro', 'Vira-lata', 999);
+    pr_consulta_pet_json(-1);
 END;
 /
- 
--- 3. FK inválida (Clínica inexistente)
+-- Excecao: ID zero
 BEGIN
-    inserir_consulta(10, SYSDATE, 'Erro FK', 1, 999);
+    pr_consulta_pet_json(0);
 END;
 /
- 
--- 4. FK inválida (Vacina inexistente)
+-- Excecao: pet inexistente
 BEGIN
-    inserir_aplicacao_vacina(10, SYSDATE, 999, 1);
+    pr_consulta_pet_json(9998);
 END;
 /
- 
--- 5. NULL em campo obrigatório
+-- Outro pet inexistente
 BEGIN
-    inserir_tutor(6, NULL, '11900000000', 'teste@email.com');
+    pr_consulta_pet_json(9999);
 END;
 /
- 
--- 6. String maior que o permitido
+-- 4. TESTE PROCEDURE 2 - RELATORIO NORMAL
 BEGIN
-    inserir_clinica(10, RPAD('A', 200, 'A'), 'Rua Teste', '1111');
+    pr_relatorio_leituras;
 END;
 /
- 
+-- 5. TESTE PROCEDURE 2 - EXCECAO DE VALOR NEGATIVO
+SELECT l.id_leitura,l.valor,s.tipo 
+FROM Leitura l
+JOIN Sensor s
+    ON l.id_sensor = s.id_sensor
+WHERE s.tipo = 'ATIVIDADE';
 
--- CONSULTA NA TABELA DE LOG
--- Mostra todos os erros registrados no sistema
--- Ordenado pelos mais recentes primeiro
-SELECT * FROM Log_erro ORDER BY data_erro DESC;
+-- Marca um ponto da transacao
+SAVEPOINT antes_teste_negativo;
+
+-- Altera temporariamente uma leitura de atividade
+UPDATE Leitura SET valor = -10 WHERE id_leitura = 3;
+
+-- Executa a procedure
+BEGIN
+    pr_relatorio_leituras;
+END;
+/
+
+-- Desfaz somente a alteracao de teste
+ROLLBACK TO antes_teste_negativo;
+
+-- Confirma que o valor voltou ao normal
+SELECT id_leitura,valor FROM Leitura WHERE id_leitura = 3;
+
+-- 6. TESTES DA TRIGGER DE AUDITORIA
+-- Antes, confirme que o ID de teste nao existe
+SELECT * FROM Consulta WHERE id_consulta = 9999;
+
+-- TESTE INSERT
+INSERT INTO Consulta (id_consulta, data_hora,motivo, status,id_pet,id_veterinario,id_clinica)
+VALUES ( 9999,SYSDATE,'Teste auditoria','AGENDADA',1,1,1);
+
+-- TESTE UPDATE 1
+UPDATE Consulta SET status = 'CANCELADA' WHERE id_consulta = 9999;
+
+--TESTE UPDATE 2
+UPDATE Consulta SET status = 'AGENDADA' WHERE id_consulta = 9999;
+
+-- TESTE DELETE
+DELETE FROM Consulta WHERE id_consulta = 9999;
+
+SELECT id_auditoria,usuario,operacao,data_operacao,valor_antigo, valor_novo,tabela_afetada FROM Auditoria ORDER BY id_auditoria;
+COMMIT;
+
+-- 7. TESTES DO LOG DE ERROS
+SELECT id_log_erro, nome_procedure,usuario,data_erro,codigo_erro,mensagem_erro FROM Log_Erro ORDER BY id_log_erro DESC;
+
+-- 8. TESTE EXTRA DO LOG - GERAR NOVO ERRO
+
+SELECT COUNT(*) AS qtd_logs_antes FROM Log_Erro;
+
+-- Gera erro tratado pela Procedure 1
+BEGIN
+    pr_consulta_pet_json(-10);
+END;
+/
+
+-- Quantidade depois
+SELECT COUNT(*) AS qtd_logs_depois
+FROM Log_Erro;
+
+-- Mostra o registro criado
+SELECT id_log_erro, nome_procedure,usuario,data_erro,codigo_erro,mensagem_erro FROM Log_Erro ORDER BY id_log_erro DESC;
