@@ -1,0 +1,15 @@
+IMPORTACAO DO DATASET GERADO PELO ORACLE (pkg_exportacao.pr_exportar_pets)
+
+Opcao 1 - pelo MongoDB Compass (tela):
+  clyvo_vet > pets > Add Data > Import JSON or CSV file > dataset_pets.json > Import
+
+Opcao 2 - pelo terminal (MongoDB Database Tools):
+  mongoimport --uri "mongodb+srv://USUARIO:SENHA@cluster0.ivoekmo.mongodb.net/" --db clyvo_vet --collection pets --jsonArray --file dataset_pets.json
+
+  --db clyvo_vet       banco de destino
+  --collection pets    colecao de destino
+  --jsonArray          o arquivo comeca com [ e cada item e um documento
+  --file               arquivo gerado pelo Oracle
+
+Importante: rodar o 01_criar_estrutura.js ANTES (cria a colecao com a validacao).
+Nao usar a opcao --drop: ela apagaria a colecao junto com as regras de validacao.
